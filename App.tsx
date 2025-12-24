@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { View, MoodEntry } from './types';
 import Layout from './components/Layout';
 import { MOOD_EMOJIS, ARTICLES, EMERGENCY_CONTACTS } from './constants';
@@ -11,27 +11,27 @@ const App: React.FC = () => {
   const [currentMood, setCurrentMood] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  
+  // State for Calendar and Timeline
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showFullCalendar, setShowFullCalendar] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Load from localStorage on mount (Offline Access)
   useEffect(() => {
     const saved = localStorage.getItem('lumina_mood_logs');
     if (saved) {
       setEntries(JSON.parse(saved));
     }
-
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  // Save to localStorage whenever entries change
   useEffect(() => {
     localStorage.setItem('lumina_mood_logs', JSON.stringify(entries));
   }, [entries]);
@@ -40,7 +40,7 @@ const App: React.FC = () => {
     if (currentMood === null) return;
     const newEntry: MoodEntry = {
       id: Date.now().toString(),
-      timestamp: Date.now(),
+      timestamp: selectedDate.setHours(12, 0, 0, 0), // Use selected date for log
       score: currentMood,
       note: note,
       tags: []
@@ -48,121 +48,313 @@ const App: React.FC = () => {
     setEntries(prev => [newEntry, ...prev]);
     setCurrentMood(null);
     setNote('');
-    // After checking in, maybe redirect to stats to see progress
     setCurrentView('stats');
   };
 
+  // Generate 3 weeks worth of dates for swiping (previous, current, next)
+  const weekDays = useMemo(() => {
+    const dates = [];
+    const start = new Date(selectedDate);
+    // Go back 14 days to start the strip
+    start.setDate(selectedDate.getDate() - selectedDate.getDay() - 7); 
+    
+    for (let i = 0; i < 21; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      dates.push({
+        dayName: d.toLocaleDateString('en-US', { weekday: 'narrow' }),
+        dateNum: d.getDate(),
+        isToday: d.toDateString() === new Date().toDateString(),
+        isSelected: d.toDateString() === selectedDate.toDateString(),
+        fullDate: d,
+        hasEntry: entries.some(e => new Date(e.timestamp).toDateString() === d.toDateString())
+      });
+    }
+    return dates;
+  }, [selectedDate, entries]);
+
+  // Scroll to selected date on mount or when weekDays changes
+  useEffect(() => {
+    if (scrollRef.current) {
+      const selectedEl = scrollRef.current.querySelector('[data-selected="true"]');
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  }, [selectedDate]);
+
+  const renderFullCalendar = () => {
+    const now = new Date();
+    const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+    const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+    const daysInMonth = monthEnd.getDate();
+    const startDay = monthStart.getDay();
+    
+    const days = [];
+    // Padding
+    for (let i = 0; i < startDay; i++) days.push(null);
+    // Real days
+    for (let i = 1; i <= daysInMonth; i++) days.push(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), i));
+
+    return (
+      <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="bg-white w-full max-w-sm rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in duration-300">
+          <div className="bg-blue-600 p-8 text-white flex justify-between items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest opacity-70 mb-1">{selectedDate.getFullYear()}</p>
+              <h3 className="text-2xl font-black tracking-tight">{selectedDate.toLocaleDateString('en-US', { month: 'long' })}</h3>
+            </div>
+            <button onClick={() => setShowFullCalendar(false)} className="bg-white/20 p-2 rounded-full">✕</button>
+          </div>
+          
+          <div className="p-8">
+            <div className="grid grid-cols-7 gap-1 mb-4">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
+                <div key={d} className="text-center text-[10px] font-black text-slate-300">{d}</div>
+              ))}
+              {days.map((day, i) => {
+                if (!day) return <div key={`empty-${i}`} />;
+                const isSelected = day.toDateString() === selectedDate.toDateString();
+                const isToday = day.toDateString() === new Date().toDateString();
+                const hasEntry = entries.some(e => new Date(e.timestamp).toDateString() === day.toDateString());
+                
+                return (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setSelectedDate(day);
+                      setShowFullCalendar(false);
+                    }}
+                    className={`h-10 w-full rounded-xl flex flex-col items-center justify-center text-sm transition-all relative ${
+                      isSelected ? 'bg-blue-600 text-white font-black shadow-lg shadow-blue-200' : 
+                      isToday ? 'bg-blue-50 text-blue-600 font-black' : 'text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {day.getDate()}
+                    {hasEntry && !isSelected && (
+                      <div className="absolute bottom-1 w-1 h-1 bg-blue-400 rounded-full"></div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-between mt-6">
+              <button 
+                onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() - 1)))}
+                className="text-blue-600 font-black text-xs uppercase tracking-widest"
+              >
+                ← Prev
+              </button>
+              <button 
+                onClick={() => setSelectedDate(new Date(selectedDate.setMonth(selectedDate.getMonth() + 1)))}
+                className="text-blue-600 font-black text-xs uppercase tracking-widest"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderHome = () => {
-    const today = new Date().toLocaleDateString('en-US', { 
-      weekday: 'long', 
+    const todayMonthYear = selectedDate.toLocaleDateString('en-US', { 
       month: 'long', 
-      day: 'numeric' 
+      year: 'numeric' 
     });
 
     return (
-      <div className="space-y-6 animate-in fade-in duration-500">
-        {isOffline && (
-          <div className="bg-amber-50 text-amber-700 px-4 py-2 rounded-xl text-xs flex items-center border border-amber-200">
-            <span className="mr-2">🛜</span> Offline Mode: All your data is saved locally on your device.
+      <div className="animate-in fade-in duration-500">
+        {/* Header Section with Swipeable Strip */}
+        <section className="-mx-6 -mt-4 p-8 bg-gradient-to-b from-blue-50 to-white text-center">
+          <div className="flex justify-between items-center mb-8">
+            <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-2xl shadow-sm">🦋</div>
+            <h3 className="text-lg font-black text-slate-800 tracking-tight">{todayMonthYear}</h3>
+            <button 
+              onClick={() => setShowFullCalendar(true)} 
+              className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-xl grayscale hover:grayscale-0 transition-all shadow-sm"
+            >
+              🗓️
+            </button>
           </div>
-        )}
 
-        <section>
-          <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1">{today}</p>
-          <h2 className="text-2xl font-bold text-slate-800 mb-1">Hello, Friend.</h2>
-          <p className="text-slate-500 text-sm">How are you feeling right now?</p>
-          
-          <div className="flex justify-between items-center mt-6">
-            {MOOD_EMOJIS.map((m) => (
-              <button
-                key={m.score}
-                onClick={() => setCurrentMood(m.score)}
-                className={`flex flex-col items-center p-3 rounded-2xl transition-all ${
-                  currentMood === m.score 
-                    ? `${m.color} text-white scale-110 shadow-lg` 
-                    : 'bg-slate-100 text-slate-400 grayscale'
-                }`}
+          {/* Swipeable Week Timeline */}
+          <div 
+            ref={scrollRef}
+            className="flex space-x-4 overflow-x-auto pb-6 px-2 scrollbar-hide snap-x"
+            style={{ scrollSnapType: 'x mandatory' }}
+          >
+            {weekDays.map((day, idx) => (
+              <div 
+                key={idx} 
+                data-selected={day.isSelected}
+                onClick={() => setSelectedDate(day.fullDate)}
+                className="flex flex-col items-center flex-shrink-0 snap-center cursor-pointer"
               >
-                <span className="text-3xl mb-1">{m.emoji}</span>
-                <span className="text-[10px] font-bold uppercase">{m.label}</span>
-              </button>
+                <span className={`text-[10px] font-black mb-3 uppercase tracking-widest transition-colors ${day.isSelected ? 'text-blue-600' : 'text-slate-300'}`}>
+                  {day.isToday && !day.isSelected ? 'Today' : day.dayName}
+                </span>
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-black transition-all relative ${
+                  day.isSelected 
+                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-200 ring-4 ring-white scale-110' 
+                    : day.hasEntry 
+                      ? 'bg-blue-100 text-blue-600' 
+                      : 'text-slate-400 border border-slate-100 bg-white'
+                }`}>
+                  {day.dateNum}
+                  {day.hasEntry && !day.isSelected && (
+                    <div className="absolute -bottom-1 w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
 
-          {currentMood && (
-            <div className="mt-6 space-y-4 animate-in slide-in-from-top-2 duration-300">
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Want to write about it? (Optional)"
-                className="w-full p-4 bg-slate-50 border rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all"
-                rows={3}
-              />
-              <button
-                onClick={handleMoodCheckIn}
-                className="w-full bg-indigo-600 text-white font-bold py-3 rounded-2xl hover:bg-indigo-700 active:scale-95 transition-all shadow-lg shadow-indigo-200"
-              >
-                Save Check-in
-              </button>
-            </div>
-          )}
-        </section>
+          <div className="py-6">
+             <h2 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">
+               {selectedDate.toDateString() === new Date().toDateString() ? 'Peaceful Day' : 'Reflection'}
+             </h2>
+             <p className="text-slate-500 text-sm max-w-[260px] mx-auto leading-relaxed">
+               {selectedDate.toDateString() === new Date().toDateString() 
+                 ? "How is your heart feeling today? Take a moment." 
+                 : `Reviewing your state from ${selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.`}
+             </p>
+          </div>
 
-        <section className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-3xl text-white shadow-xl">
-          <h3 className="font-bold text-lg mb-2">Weekly Summary</h3>
-          <p className="text-sm opacity-90 mb-4">You've logged {entries.length} moments this month. Keep going, small steps matter.</p>
           <button 
-            onClick={() => setCurrentView('stats')}
-            className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-xs font-semibold hover:bg-white/30 transition-all"
+             onClick={() => setCurrentMood(3)}
+             className="mt-4 bg-white border-2 border-blue-100 text-blue-600 px-10 py-3 rounded-full text-sm font-black shadow-lg shadow-blue-50 hover:bg-blue-50 transition-all active:scale-95 uppercase tracking-widest"
           >
-            View Full Report
+            {selectedDate.toDateString() === new Date().toDateString() ? 'Check-in Today' : `Log for ${selectedDate.getDate()}`}
           </button>
         </section>
 
-        <section>
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-slate-800">Suicide Awareness Hub</h3>
-            <button onClick={() => setCurrentView('hub')} className="text-indigo-600 text-xs font-semibold">View All</button>
+        <div className="px-8 space-y-8">
+          {isOffline && (
+            <div className="bg-blue-50 text-blue-700 px-5 py-3 rounded-2xl text-xs flex items-center border border-blue-100">
+              <span className="mr-2">🛡️</span> Secure & Offline: Your data stays on your phone.
+            </div>
+          )}
+
+          <section className="pt-2">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-black text-slate-800 tracking-tight">Daily Insights</h3>
+              <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-1 rounded-md font-bold uppercase tracking-wider">Today</span>
+            </div>
+            
+            <div className="flex space-x-5 overflow-x-auto pb-6 -mx-2 px-2 scrollbar-hide">
+              <div className="flex-shrink-0 w-40 h-52 bg-white border-2 border-slate-50 rounded-[40px] p-6 flex flex-col justify-between items-center text-center shadow-sm">
+                <span className="text-sm font-black text-slate-700 leading-tight">Mood Journal</span>
+                <button 
+                  onClick={() => setCurrentView('journal')}
+                  className="w-14 h-14 bg-blue-600 text-white rounded-[20px] flex items-center justify-center text-3xl shadow-xl shadow-blue-100"
+                >
+                  +
+                </button>
+              </div>
+
+              <div className="flex-shrink-0 w-40 h-52 bg-blue-900 rounded-[40px] p-6 flex flex-col justify-between text-white shadow-2xl shadow-blue-200 overflow-hidden relative">
+                <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Emergency</span>
+                <p className="text-sm font-black leading-tight">SOS Crisis Support</p>
+                <button onClick={() => setCurrentView('sos')} className="mt-2 text-[10px] font-black bg-white/20 py-2 rounded-full uppercase tracking-tighter">Get Help</button>
+              </div>
+
+              <div className="flex-shrink-0 w-40 h-52 bg-slate-800 rounded-[40px] p-6 flex flex-col justify-between text-white shadow-xl overflow-hidden">
+                 <span className="text-[10px] font-black uppercase opacity-40">Self-Care</span>
+                 <p className="text-sm font-black leading-tight">Mindfulness Exercise</p>
+                 <div className="text-3xl">🧘‍♂️</div>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-black text-slate-800 tracking-tight">Resources</h3>
+              <button onClick={() => setCurrentView('hub')} className="text-blue-600 text-[10px] font-black uppercase tracking-widest">View All</button>
+            </div>
+            <div className="space-y-4 pb-10">
+              {ARTICLES.slice(0, 2).map(art => (
+                <button 
+                  key={art.id}
+                  onClick={() => setCurrentView('hub')}
+                  className="w-full p-6 bg-slate-50 border border-slate-100 rounded-[32px] text-left flex items-center shadow-sm hover:border-blue-200 transition-colors"
+                >
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mr-5 text-2xl shadow-sm">
+                    {art.category === 'signs' ? '🛡️' : '🧠'}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-800 leading-tight">{art.title}</h4>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1.5">{art.category}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {currentMood && (
+          <div className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-md flex items-end justify-center">
+             <div className="bg-white w-full max-w-md rounded-t-[50px] p-10 space-y-8 animate-in slide-in-from-bottom duration-500 shadow-2xl">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-black text-slate-800 tracking-tight">Daily Reflection</h2>
+                  <button onClick={() => setCurrentMood(null)} className="text-slate-400 w-10 h-10 flex items-center justify-center bg-slate-50 rounded-full">✕</button>
+                </div>
+
+                <div className="flex justify-between items-center py-4 px-2">
+                  {MOOD_EMOJIS.map((m) => (
+                    <button
+                      key={m.score}
+                      onClick={() => setCurrentMood(m.score)}
+                      className={`flex flex-col items-center transition-all duration-300 ${
+                        currentMood === m.score ? 'scale-125 -translate-y-2' : 'opacity-30 grayscale'
+                      }`}
+                    >
+                      <span className="text-5xl mb-2 drop-shadow-sm">{m.emoji}</span>
+                      <span className={`text-[8px] font-black uppercase tracking-widest ${currentMood === m.score ? 'text-blue-600' : 'text-slate-400'}`}>{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="What's on your mind today?"
+                  className="w-full p-6 bg-slate-50 border-none rounded-[32px] text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all h-40 resize-none"
+                />
+
+                <button
+                  onClick={handleMoodCheckIn}
+                  className="w-full bg-blue-600 text-white font-black py-5 rounded-[24px] hover:bg-blue-700 active:scale-95 transition-all shadow-2xl shadow-blue-100 uppercase tracking-widest"
+                >
+                  Save Reflection
+                </button>
+             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {ARTICLES.slice(0, 2).map(art => (
-              <button 
-                key={art.id}
-                onClick={() => setCurrentView('hub')}
-                className="p-4 bg-white border rounded-2xl text-left hover:border-indigo-200 transition-colors"
-              >
-                <span className="text-xs text-indigo-500 font-bold uppercase block mb-1">Article</span>
-                <h4 className="text-sm font-bold text-slate-800 leading-tight">{art.title}</h4>
-              </button>
-            ))}
-          </div>
-        </section>
+        )}
+        {showFullCalendar && renderFullCalendar()}
       </div>
     );
   };
 
   const renderHub = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-1">Knowledge Hub</h2>
-        <p className="text-slate-500 text-sm">Learn how to protect yourself and others.</p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="mb-8">
+        <h2 className="text-3xl font-black text-slate-900 tracking-tight">The Hub</h2>
+        <p className="text-slate-500 text-sm mt-2">Information and resources for your journey.</p>
       </div>
-
-      <div className="space-y-4">
+      <div className="space-y-6">
         {ARTICLES.map(art => (
-          <div key={art.id} className="bg-white border p-5 rounded-2xl shadow-sm">
-            <div className="flex items-center mb-2">
-              <span className={`w-2 h-2 rounded-full mr-2 ${
-                art.category === 'signs' ? 'bg-red-400' :
-                art.category === 'myths' ? 'bg-blue-400' :
-                art.category === 'helping' ? 'bg-green-400' : 'bg-purple-400'
-              }`} />
-              <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-                {art.category}
-              </span>
+          <div key={art.id} className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-sm hover:border-blue-100 transition-colors">
+            <div className="flex items-center mb-4">
+               <span className="text-[10px] bg-blue-100 text-blue-600 px-3 py-1 rounded-full font-black uppercase tracking-widest mr-4">
+                 {art.category}
+               </span>
+               <h3 className="text-lg font-black text-slate-800 leading-tight">{art.title}</h3>
             </div>
-            <h3 className="font-bold text-slate-800 mb-2">{art.title}</h3>
-            <p className="text-sm text-slate-600 leading-relaxed">{art.content}</p>
+            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">{art.content}</p>
           </div>
         ))}
       </div>
@@ -170,47 +362,39 @@ const App: React.FC = () => {
   );
 
   const renderJournal = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-1">Your Journal</h2>
-          <p className="text-slate-500 text-sm">Reflect on your journey.</p>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Journal</h2>
+          <p className="text-slate-500 text-sm mt-2">Your collection of reflections.</p>
         </div>
         <button 
-          onClick={() => setCurrentView('home')}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-full text-xs font-bold"
+          onClick={() => setCurrentMood(3)}
+          className="w-12 h-12 bg-blue-600 text-white rounded-[20px] flex items-center justify-center text-2xl shadow-xl shadow-blue-100"
         >
-          New Entry
+          +
         </button>
       </div>
 
       {entries.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-4xl mb-4">📔</div>
-          <p className="text-slate-400">Your journal is empty. Start by checking in on the home screen.</p>
+        <div className="text-center py-24 bg-slate-50 rounded-[40px] border border-dashed border-slate-200">
+          <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Your journey begins here</p>
         </div>
       ) : (
         <div className="space-y-4">
           {entries.map(entry => {
             const mood = MOOD_EMOJIS.find(m => m.score === entry.score);
             return (
-              <div key={entry.id} className="bg-white border p-5 rounded-2xl shadow-sm hover:border-indigo-100 transition-all">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center">
-                    <span className="text-2xl mr-2">{mood?.emoji}</span>
-                    <div>
-                      <span className="block text-xs font-bold text-slate-800 uppercase tracking-tight">{mood?.label}</span>
-                      <span className="block text-[10px] text-slate-400">
-                        {new Date(entry.timestamp).toLocaleString()}
-                      </span>
-                    </div>
+              <div key={entry.id} className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm flex items-start group hover:border-blue-200 transition-all">
+                <span className="text-4xl mr-6 shrink-0 group-hover:scale-110 transition-transform">{mood?.emoji}</span>
+                <div className="flex-1">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                      {new Date(entry.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
+                  <p className="text-slate-800 text-sm leading-relaxed font-medium">{entry.note || "A silent reflection."}</p>
                 </div>
-                {entry.note ? (
-                  <p className="text-sm text-slate-600 italic">"{entry.note}"</p>
-                ) : (
-                  <p className="text-sm text-slate-300 italic">No notes added for this check-in.</p>
-                )}
               </div>
             );
           })}
@@ -220,39 +404,39 @@ const App: React.FC = () => {
   );
 
   const renderStats = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800 mb-1">Mood Analysis</h2>
-        <p className="text-slate-500 text-sm">Patterns and AI insights from your logs.</p>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="mb-8">
+        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Statistics</h2>
+        <p className="text-slate-500 text-sm mt-2">Visualizing your emotional landscape.</p>
       </div>
       <MoodAnalytics entries={entries} />
     </div>
   );
 
   const renderSOS = () => (
-    <div className="fixed inset-0 z-50 bg-white p-8 flex flex-col animate-in fade-in zoom-in duration-300">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-black text-red-600">GET HELP NOW</h2>
+    <div className="fixed inset-0 z-[70] bg-white p-10 flex flex-col animate-in fade-in slide-in-from-bottom duration-500 overflow-y-auto">
+      <div className="flex justify-between items-center mb-10">
+        <h2 className="text-4xl font-black text-blue-900 tracking-tighter leading-none">HELP IS<br/>HERE</h2>
         <button 
           onClick={() => setCurrentView('home')}
-          className="bg-slate-100 p-2 rounded-full"
+          className="bg-slate-100 w-12 h-12 rounded-full flex items-center justify-center font-bold text-slate-500"
         >
           ✕
         </button>
       </div>
 
-      <p className="text-slate-600 mb-8 leading-relaxed">
-        If you are in immediate danger, please call your local emergency services (like 911) immediately. You are not alone.
+      <p className="text-slate-500 mb-10 leading-relaxed font-medium">
+        If you are in immediate danger, please call your local emergency services immediately. Your presence here matters.
       </p>
 
-      <div className="space-y-4 flex-1 overflow-y-auto pb-4">
+      <div className="space-y-6 flex-1">
         {EMERGENCY_CONTACTS.map((contact, idx) => (
-          <div key={idx} className="p-6 bg-red-50 border border-red-100 rounded-3xl">
-            <h3 className="text-red-900 font-bold text-lg mb-1">{contact.name}</h3>
-            <p className="text-red-700 text-sm mb-4">{contact.description}</p>
+          <div key={idx} className="p-8 bg-blue-50 border border-blue-100 rounded-[40px] shadow-sm">
+            <h3 className="text-blue-900 font-black text-xl mb-2">{contact.name}</h3>
+            <p className="text-blue-700 text-sm mb-6 font-medium leading-snug opacity-80">{contact.description}</p>
             <a 
               href={`tel:${contact.number}`}
-              className="inline-flex items-center justify-center w-full bg-red-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-red-200 active:scale-95 transition-all"
+              className="inline-flex items-center justify-center w-full bg-blue-700 text-white font-black py-5 rounded-[24px] shadow-xl shadow-blue-200 active:scale-95 transition-all uppercase tracking-widest text-sm"
             >
               📞 Call {contact.number}
             </a>
@@ -260,14 +444,14 @@ const App: React.FC = () => {
         ))}
       </div>
 
-      <div className="pt-6 border-t mt-4">
-        <p className="text-center text-xs text-slate-400 mb-4 uppercase tracking-widest font-bold">Safety Plan Quick Tips</p>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 bg-slate-50 rounded-xl text-[10px] font-medium text-slate-600">
-            Hold something cold (ice cube) to ground yourself.
+      <div className="pt-10 border-t border-slate-100 mt-8">
+        <p className="text-center text-[10px] text-slate-400 mb-6 uppercase tracking-[0.2em] font-black">Grounding Exercises</p>
+        <div className="grid grid-cols-2 gap-5">
+          <div className="p-6 bg-slate-50 rounded-[32px] text-[10px] font-black text-slate-600 uppercase tracking-widest text-center leading-relaxed">
+            HOLD AN ICE CUBE
           </div>
-          <div className="p-3 bg-slate-50 rounded-xl text-[10px] font-medium text-slate-600">
-            Focus on taking 5 slow breaths.
+          <div className="p-6 bg-slate-50 rounded-[32px] text-[10px] font-black text-slate-600 uppercase tracking-widest text-center leading-relaxed">
+            COUNT 5 SENSES
           </div>
         </div>
       </div>

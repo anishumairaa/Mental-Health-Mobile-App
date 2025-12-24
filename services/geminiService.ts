@@ -2,7 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { MoodEntry } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Always use the process.env.API_KEY directly in the constructor
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function analyzeMoodTrend(entries: MoodEntry[]): Promise<string> {
   if (entries.length === 0) return "Start tracking your mood to see insights here.";
@@ -23,6 +24,7 @@ export async function analyzeMoodTrend(entries: MoodEntry[]): Promise<string> {
       }
     });
 
+    // Use the .text property directly from GenerateContentResponse
     return response.text || "Unable to generate insights at this time.";
   } catch (error) {
     console.error("Gemini analysis failed:", error);

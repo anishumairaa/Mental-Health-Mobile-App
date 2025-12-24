@@ -43,9 +43,9 @@ export const EMERGENCY_CONTACTS: EmergencyContact[] = [
 ];
 
 export const MOOD_EMOJIS = [
-  { score: 1, label: 'Crisis', emoji: '😫', color: 'bg-red-500' },
-  { score: 2, label: 'Struggling', emoji: '😔', color: 'bg-orange-500' },
-  { score: 3, label: 'Okay', emoji: '😐', color: 'bg-yellow-500' },
-  { score: 4, label: 'Good', emoji: '🙂', color: 'bg-green-500' },
+  { score: 1, label: 'Crisis', emoji: '😫', color: 'bg-blue-900' },
+  { score: 2, label: 'Struggling', emoji: '😔', color: 'bg-blue-700' },
+  { score: 3, label: 'Okay', emoji: '😐', color: 'bg-blue-400' },
+  { score: 4, label: 'Good', emoji: '🙂', color: 'bg-cyan-500' },
   { score: 5, label: 'Great', emoji: '🌟', color: 'bg-emerald-500' },
 ];

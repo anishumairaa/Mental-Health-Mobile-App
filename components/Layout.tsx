@@ -10,42 +10,44 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }) => {
   const navItems: { id: View; label: string; icon: string }[] = [
-    { id: 'home', label: 'Home', icon: '🏠' },
+    { id: 'home', label: 'Today', icon: '🗓️' },
     { id: 'hub', label: 'Hub', icon: '📚' },
     { id: 'journal', label: 'Journal', icon: '✍️' },
     { id: 'stats', label: 'Stats', icon: '📊' },
   ];
 
   return (
-    <div className="flex flex-col min-h-screen max-w-md mx-auto bg-white shadow-xl relative overflow-hidden">
-      {/* Header */}
-      <header className="px-6 py-4 flex justify-between items-center border-b bg-white sticky top-0 z-20">
-        <h1 className="text-xl font-bold text-indigo-600 tracking-tight">Lumina</h1>
-        <button 
-          onClick={() => setView('sos')}
-          className="bg-red-100 text-red-600 px-4 py-1 rounded-full text-sm font-bold animate-pulse hover:bg-red-200 transition-colors"
-        >
-          SOS HELP
-        </button>
-      </header>
+    <div className="flex flex-col min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden">
+      {/* Dynamic Header */}
+      {currentView !== 'home' && (
+        <header className="px-8 py-5 flex justify-between items-center border-b bg-white sticky top-0 z-20">
+          <h1 className="text-xl font-black text-slate-800 tracking-tight">Lumina</h1>
+          <button 
+            onClick={() => setView('sos')}
+            className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-lg shadow-blue-100 uppercase tracking-widest"
+          >
+            SOS Help
+          </button>
+        </header>
+      )}
 
-      {/* Main Content */}
-      <main className="flex-1 px-6 py-4 pb-24 overflow-y-auto">
+      {/* Main Content with generous margins */}
+      <main className={`flex-1 overflow-y-auto ${currentView === 'home' ? 'pb-28' : 'px-8 py-6 pb-28'}`}>
         {children}
       </main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t px-6 py-3 flex justify-between items-center z-20">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t px-8 py-5 flex justify-between items-center z-20 rounded-t-[40px] shadow-[0_-15px_30px_-5px_rgba(0,0,0,0.06)]">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setView(item.id)}
-            className={`flex flex-col items-center transition-all ${
-              currentView === item.id ? 'text-indigo-600 scale-110' : 'text-slate-400'
+            className={`flex flex-col items-center transition-all duration-300 ${
+              currentView === item.id ? 'text-blue-600 -translate-y-1' : 'text-slate-400 opacity-60'
             }`}
           >
-            <span className="text-xl">{item.icon}</span>
-            <span className="text-[10px] font-medium mt-1">{item.label}</span>
+            <span className={`text-2xl mb-1 ${currentView === item.id ? 'scale-110 drop-shadow-md' : ''}`}>{item.icon}</span>
+            <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
           </button>
         ))}
       </nav>
