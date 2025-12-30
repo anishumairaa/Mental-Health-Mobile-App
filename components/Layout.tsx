@@ -25,9 +25,9 @@ const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }) => {
           <h1 className="text-xl font-black text-slate-800 tracking-tight">Lumina</h1>
           <button 
             onClick={() => setView('sos')}
-            className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-lg shadow-blue-100 uppercase tracking-widest"
+            className="bg-red-600 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-lg shadow-blue-100 uppercase tracking-widest"
           >
-            SOS Help
+            SOS
           </button>
         </header>
       )}

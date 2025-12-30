@@ -148,7 +148,7 @@ const App: React.FC = () => {
           </div>
           <button 
             onClick={() => setCurrentView('sos')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-full text-[10px] font-black shadow-lg shadow-blue-100 uppercase tracking-widest"
+            className="bg-red-600 text-white px-4 py-2 rounded-full text-[10px] font-black shadow-lg shadow-blue-100 uppercase tracking-widest"
           >
             SOS
           </button>
@@ -549,7 +549,7 @@ const App: React.FC = () => {
                 <div className="text-3xl">💬</div>
               </div>
 
-              <div onClick={() => setCurrentView('sos')} className="cursor-pointer flex-shrink-0 w-40 h-52 bg-blue-900 rounded-[40px] p-6 flex flex-col justify-between text-white shadow-2xl shadow-blue-200 overflow-hidden relative">
+              <div onClick={() => setCurrentView('sos')} className="cursor-pointer flex-shrink-0 w-40 h-52 bg-red-900 rounded-[40px] p-6 flex flex-col justify-between text-white shadow-2xl shadow-blue-200 overflow-hidden relative">
                 <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Emergency</span>
                 <p className="text-sm font-black leading-tight">SOS Crisis Support</p>
