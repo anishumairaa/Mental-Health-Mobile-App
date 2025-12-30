@@ -12,6 +12,8 @@ export interface HubArticle {
   category: 'signs' | 'myths' | 'helping' | 'coping';
   title: string;
   content: string;
+  emoji: string;
+  readTime: string;
 }
 
 export interface EmergencyContact {
@@ -20,4 +22,4 @@ export interface EmergencyContact {
   description: string;
 }
 
-export type View = 'home' | 'hub' | 'journal' | 'stats' | 'sos';
+export type View = 'home' | 'hub' | 'journal' | 'stats' | 'sos' | 'chat';

@@ -11,6 +11,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }) => {
   const navItems: { id: View; label: string; icon: string }[] = [
     { id: 'home', label: 'Today', icon: '🗓️' },
+    { id: 'chat', label: 'Chat', icon: '💬' },
     { id: 'hub', label: 'Hub', icon: '📚' },
     { id: 'journal', label: 'Journal', icon: '✍️' },
     { id: 'stats', label: 'Stats', icon: '📊' },
@@ -19,7 +20,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }) => {
   return (
     <div className="flex flex-col min-h-screen max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden">
       {/* Dynamic Header */}
-      {currentView !== 'home' && (
+      {currentView !== 'home' && currentView !== 'chat' && (
         <header className="px-8 py-5 flex justify-between items-center border-b bg-white sticky top-0 z-20">
           <h1 className="text-xl font-black text-slate-800 tracking-tight">Lumina</h1>
           <button 
@@ -32,12 +33,12 @@ const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }) => {
       )}
 
       {/* Main Content with generous margins */}
-      <main className={`flex-1 overflow-y-auto ${currentView === 'home' ? 'pb-28' : 'px-8 py-6 pb-28'}`}>
+      <main className={`flex-1 overflow-y-auto ${currentView === 'home' || currentView === 'chat' ? 'pb-28' : 'px-8 py-6 pb-28'}`}>
         {children}
       </main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t px-8 py-5 flex justify-between items-center z-20 rounded-t-[40px] shadow-[0_-15px_30px_-5px_rgba(0,0,0,0.06)]">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t px-6 py-5 flex justify-between items-center z-20 rounded-t-[40px] shadow-[0_-15px_30px_-5px_rgba(0,0,0,0.06)]">
         {navItems.map((item) => (
           <button
             key={item.id}

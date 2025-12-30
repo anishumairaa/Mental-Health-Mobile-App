@@ -6,39 +6,47 @@ export const ARTICLES: HubArticle[] = [
   {
     id: '1',
     category: 'signs',
+    emoji: '🚩',
+    readTime: '3 min',
     title: 'Warning Signs to Watch For',
-    content: 'Suicide doesn\'t always have obvious "tells," but there are often behavioral changes. Look for: Talking about wanting to die, extreme mood swings, giving away prized possessions, withdrawing from friends, or sleeping too much/little. If someone is exhibiting these behaviors, especially if they are new or increased, it\'s time to reach out.'
+    content: 'Suicide doesn\'t always have obvious "tells," but there are often behavioral changes. \n\nLook for: \n\nTalking about wanting to die, extreme mood swings, giving away prized possessions, withdrawing from friends, or sleeping too much/little. \n\n\nIf someone is exhibiting these behaviors, especially if they are new or increased, it\'s time to reach out.'
   },
   {
     id: '2',
     category: 'myths',
+    emoji: '🔍',
+    readTime: '2 min',
     title: 'Myths vs. Facts',
-    content: 'Myth: Asking someone if they are suicidal will plant the idea in their head. Fact: Research shows that asking directly about suicide actually reduces the risk and provides the individual with a sense of relief that someone noticed. Myth: Only people with mental health issues die by suicide. Fact: Many factors contribute to suicide, including stress, financial hardship, and relationship problems.'
+    content: 'Myth: Asking someone if they are suicidal will plant the idea in their head. \n\nFact: Research shows that asking directly about suicide actually reduces the risk and provides the individual with a sense of relief that someone noticed. \n\nMyth: Only people with mental health issues die by suicide. \n\nFact: Many factors contribute to suicide, including stress, financial hardship, and relationship problems.'
   },
   {
     id: '3',
     category: 'helping',
+    emoji: '🤝',
+    readTime: '4 min',
     title: 'How to Help a Friend',
-    content: '1. Ask directly: "Are you thinking about suicide?" 2. Listen without judgment. 3. Keep them safe: Reduce access to lethal means. 4. Help them connect: Contact a crisis line or professional. 5. Stay in touch: Follow-up matters significantly in recovery.'
+    content: '\n1. Ask directly: "Are you thinking about suicide?" \n\n2. Listen without judgment. \n\n3. Keep them safe: Reduce access to lethal means. \n\n4. Help them connect: Contact a crisis line or professional. \n\n5. Stay in touch: Follow-up matters significantly in recovery.'
   },
   {
     id: '4',
     category: 'coping',
+    emoji: '🧘‍♀️',
+    readTime: '3 min',
     title: 'Immediate Coping Strategies',
-    content: 'When feeling overwhelmed: 1. Try the 5-4-3-2-1 grounding technique. 2. Reach out to a trusted "safe person". 3. Delay any decisions for just 5 minutes, then another 5. 4. Use a physical distraction like holding an ice cube or taking a cold shower. 5. Remember that feelings are temporary, even if they feel permanent right now.'
+    content: 'When feeling overwhelmed: \n\n1. Try the 5-4-3-2-1 grounding technique. \n\n2. Reach out to a trusted "safe person". \n\n3. Delay any decisions for just 5 minutes, then another 5. \n\n4. Use a physical distraction like holding an ice cube. \n\n5. Remember that feelings are temporary, even if they feel permanent right now.'
   }
 ];
 
 export const EMERGENCY_CONTACTS: EmergencyContact[] = [
   {
-    name: 'National Suicide Prevention Lifeline',
-    number: '988',
-    description: '24/7, free and confidential support for people in distress.'
+    name: 'Mental Illness Awareness & Support Lifeline',
+    number: '1800 180 066',
+    description: '24/7, free and confidential support by MIASA Association.'
   },
   {
-    name: 'Crisis Text Line',
-    number: '741741',
-    description: 'Text HOME to 741741 to connect with a Crisis Counselor.'
+    name: 'Talian Kasih Lifeline',
+    number: '15999',
+    description: 'Or text +6019 261 5999 to connect using WhatsApp Messenger.'
   }
 ];
 
