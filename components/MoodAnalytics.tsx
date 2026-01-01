@@ -56,7 +56,7 @@ const MoodAnalytics: React.FC<MoodAnalyticsProps> = ({ entries }) => {
 
       <div className="bg-white border border-blue-100 p-6 rounded-[32px] shadow-sm">
         <h4 className="font-bold text-slate-800 flex items-center mb-2">
-          <span className="mr-2">💡</span> Lumina AI Insights
+          <span className="mr-2">💡</span> Luminar AI Insights
         </h4>
         {loading ? (
           <div className="animate-pulse space-y-2">

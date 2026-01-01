@@ -1,5 +1,5 @@
 {
-  "name": "Lumina: Crisis Support & Mental Health",
+  "name": "Luminar: Crisis Support & Mental Health",
   "description": "A comprehensive suicide awareness and crisis support application providing immediate emergency access, mood tracking, and educational resources.",
   "requestFramePermissions": [
     "geolocation"

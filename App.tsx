@@ -23,7 +23,7 @@ const App: React.FC = () => {
 
   // AI Chat State
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
-    { role: 'ai', text: "Hello. I'm Lumina, your supportive listener. How are you feeling today? I'm here to listen without judgment." }
+    { role: 'ai', text: "Hello. I'm Luminar, your supportive listener. How are you feeling today? I'm here to listen without judgment." }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -111,7 +111,7 @@ const App: React.FC = () => {
         chatInstanceRef.current = ai.chats.create({
           model: 'gemini-3-flash-preview',
           config: {
-            systemInstruction: "You are Lumina, a compassionate and non-judgmental mental health companion. Your goal is to provide a safe space for users to talk about their feelings. Use active listening, validate their emotions, and offer gentle support. If a user expresses immediate self-harm or suicidal intent, compassionately urge them to use the 'SOS Help' feature in the app or call emergency services immediately. You are a listener, not a doctor. Keep responses warm and concise.",
+            systemInstruction: "You are Luminar, a compassionate and non-judgmental mental health companion. Your goal is to provide a safe space for users to talk about their feelings. Use active listening, validate their emotions, and offer gentle support. If a user expresses immediate self-harm or suicidal intent, compassionately urge them to use the 'SOS Help' feature in the app or call emergency services immediately. You are a listener, not a doctor. Keep responses warm and concise.",
           }
         });
       }
@@ -545,7 +545,7 @@ const App: React.FC = () => {
               <div onClick={() => setCurrentView('chat')} className="cursor-pointer flex-shrink-0 w-40 h-52 bg-blue-600 rounded-[40px] p-6 flex flex-col justify-between text-white shadow-xl shadow-blue-100 overflow-hidden relative">
                 <div className="absolute -left-4 -bottom-4 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60">AI Listener</span>
-                <p className="text-sm font-black leading-tight">Talk to Lumina Assistant</p>
+                <p className="text-sm font-black leading-tight">Talk to Luminar Assistant</p>
                 <div className="text-3xl">💬</div>
               </div>
 

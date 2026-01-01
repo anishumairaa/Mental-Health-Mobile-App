@@ -22,7 +22,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, setView, children }) => {
       {/* Dynamic Header */}
       {currentView !== 'home' && currentView !== 'chat' && (
         <header className="px-8 py-5 flex justify-between items-center border-b bg-white sticky top-0 z-20">
-          <h1 className="text-xl font-black text-slate-800 tracking-tight">Lumina</h1>
+          <h1 className="text-xl font-black text-slate-800 tracking-tight">Luminar</h1>
           <button 
             onClick={() => setView('sos')}
             className="bg-red-600 text-white px-4 py-1.5 rounded-full text-[10px] font-black shadow-lg shadow-blue-100 uppercase tracking-widest"
